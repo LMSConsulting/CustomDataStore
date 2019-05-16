@@ -1,4 +1,4 @@
-package com.likeminds.custdatastore.clients;
+package com.likeminds.customdatastore.clients;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -30,14 +30,20 @@ import org.apache.http.message.BasicNameValuePair;
 import org.apache.http.protocol.HTTP;
 import org.apache.http.util.EntityUtils;
 import org.json.simple.parser.JSONParser;
+import org.slf4j.LoggerFactory;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.w3c.dom.NodeList;
 import org.xml.sax.InputSource;
 import org.xml.sax.SAXException;
 
-public class OAuthUtils {
+import com.likeminds.customdatastore.ldap.DefaultLdapDAO;
 
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.core.Logger;
+
+public class OAuthUtils {
+	private final static Logger logger = (Logger) LoggerFactory.getLogger(DefaultLdapDAO.class);
 	public static OAuth2Details createOAuthDetails(Properties config) {
 		OAuth2Details oauthDetails = new OAuth2Details();
 		oauthDetails.setAccessToken((String) config
@@ -57,7 +63,7 @@ public class OAuthUtils {
 		oauthDetails.setResourceServerUrl((String) config.get(OAuthConstants.RESOURCE_SERVER_URL));
 		
 		if(!isValid(oauthDetails.getResourceServerUrl())){
-			System.out.println("Resource server url is null. Will assume request is for generating Access token");
+			logger.debug("Resource server url is null. Will assume request is for generating Access token");
 			oauthDetails.setAccessTokenRequest(true);
 		}
 
@@ -71,7 +77,7 @@ public class OAuthUtils {
 		try {
 			config.load(is);
 		} catch (IOException e) {
-			System.out.println("Could not load properties from " + path);
+			logger.debug("Could not load properties from " + path);
 			e.printStackTrace();
 			return null;
 		}
@@ -99,7 +105,7 @@ public class OAuthUtils {
 				String accessToken = getAccessToken(oauthDetails);
 				if (isValid(accessToken)) {
 					// update the access token
-					// System.out.println("New access token: " + accessToken);
+					// logger.debug("New access token: " + accessToken);
 					oauthDetails.setAccessToken(accessToken);
 					get.removeHeaders(OAuthConstants.AUTHORIZATION);
 					get.addHeader(OAuthConstants.AUTHORIZATION,
@@ -173,12 +179,12 @@ public class OAuthUtils {
 						OAuthConstants.AUTHORIZATION,
 						getBasicAuthorizationHeader(oauthDetails.getClientId(),
 								oauthDetails.getClientSecret()));
-				System.out.println("Retry with client credentials");
+				logger.debug("Retry with client credentials");
 				post.releaseConnection();
 				response = client.execute(post);
 				code = response.getStatusLine().getStatusCode();
 				if (code == 401 || code == 403) {
-					System.out.println("Could not authenticate using client credentials.");
+					logger.debug("Could not authenticate using client credentials.");
 					throw new RuntimeException(
 								"Could not retrieve access token for client: "
 										+ oauthDetails.getClientId());
@@ -239,13 +245,13 @@ public class OAuthUtils {
 			e.printStackTrace();
 			throw new RuntimeException();
 		} catch (RuntimeException e) {
-			System.out.println("Could not parse JSON response");
+			logger.debug("Could not parse JSON response");
 			throw e;
 		}
-		System.out.println();
-		System.out.println("********** Response Received **********");
+		
+		logger.debug("********** Response Received **********");
 		for (Map.Entry<String, String> entry : oauthLoginResponse.entrySet()) {
-			System.out.println(String.format("  %s = %s", entry.getKey(),
+			logger.debug(String.format("  %s = %s", entry.getKey(),
 					entry.getValue()));
 		}
 		return oauthLoginResponse;
@@ -258,11 +264,11 @@ public class OAuthUtils {
 		Charset charset = null;
 		HttpEntity entity = response.getEntity();
 
-		System.out.println();
-		System.out.println("********** Response Received **********");
+		
+		logger.debug("********** Response Received **********");
 
 		for (Map.Entry<String, Charset> entry : set) {
-			System.out.println(String.format("  %s = %s", entry.getKey(),
+			logger.debug(String.format("  %s = %s", entry.getKey(),
 					entry.getValue()));
 			if (entry.getKey().equalsIgnoreCase(HTTP.UTF_8)) {
 				charset = entry.getValue();
@@ -273,7 +279,7 @@ public class OAuthUtils {
 			List<NameValuePair> list = URLEncodedUtils.parse(
 					EntityUtils.toString(entity), Charset.forName(HTTP.UTF_8));
 			for (NameValuePair pair : list) {
-				System.out.println(String.format("  %s = %s", pair.getName(),
+				logger.debug(String.format("  %s = %s", pair.getName(),
 						pair.getValue()));
 				oauthResponse.put(pair.getName(), pair.getValue());
 			}
@@ -299,7 +305,7 @@ public class OAuthUtils {
 			inStream.setCharacterStream(new StringReader(xmlString));
 			Document doc = db.parse(inStream);
 
-			System.out.println("********** Response Receieved **********");
+			logger.debug("********** Response Receieved **********");
 			parseXMLDoc(null, doc, oauthResponse);
 		} catch (Exception e) {
 			e.printStackTrace();
@@ -323,7 +329,7 @@ public class OAuthUtils {
 				org.w3c.dom.Element childElement = (org.w3c.dom.Element) child
 						.item(j);
 				if (childElement.hasChildNodes()) {
-					System.out.println(childElement.getTagName() + " : "
+					logger.debug(childElement.getTagName() + " : "
 							+ childElement.getTextContent());
 					oauthResponse.put(childElement.getTagName(),
 							childElement.getTextContent());
@@ -349,10 +355,10 @@ public class OAuthUtils {
 		String encodedValue = null;
 		byte[] encodedBytes = Base64.encodeBase64(cred.getBytes());
 		encodedValue = new String(encodedBytes);
-		System.out.println("encodedBytes " + new String(encodedBytes));
+		logger.debug("encodedBytes " + new String(encodedBytes));
 
 		byte[] decodedBytes = Base64.decodeBase64(encodedBytes);
-		System.out.println("decodedBytes " + new String(decodedBytes));
+		logger.debug("decodedBytes " + new String(decodedBytes));
 
 		return encodedValue;
 
@@ -369,30 +375,30 @@ public class OAuthUtils {
 		String grantType = input.getGrantType();
 		
 		if(!isValid(grantType)){
-			System.out.println("Please provide valid value for grant_type");
+			logger.debug("Please provide valid value for grant_type");
 			return false;
 		}
 		
 		if(!isValid(input.getAuthenticationServerUrl())){
-			System.out.println("Please provide valid value for authentication server url");
+			logger.debug("Please provide valid value for authentication server url");
 			return false;
 		}
 		
 		if(grantType.equals(OAuthConstants.GRANT_TYPE_PASSWORD)){
 			if(!isValid(input.getUsername()) || !isValid(input.getPassword())){
-				System.out.println("Please provide valid username and password for password grant_type");
+				logger.debug("Please provide valid username and password for password grant_type");
 				return false;
 			}
 		}
 		
 		if(grantType.equals(OAuthConstants.GRANT_TYPE_CLIENT_CREDENTIALS)){
 			if(!isValid(input.getClientId()) || !isValid(input.getClientSecret())){
-				System.out.println("Please provide valid client_id and client_secret for client_credentials grant_type");
+				logger.debug("Please provide valid client_id and client_secret for client_credentials grant_type");
 				return false;
 			}
 		}
 		
-		System.out.println("Validated Input");
+		logger.debug("Validated Input");
 		return true;
 		
 	}

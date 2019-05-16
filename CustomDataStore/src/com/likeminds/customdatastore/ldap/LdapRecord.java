@@ -1,4 +1,4 @@
-package com.likeminds.custdatastore.ldap;
+package com.likeminds.customdatastore.ldap;
 
 import java.util.List;
 import java.util.Map;

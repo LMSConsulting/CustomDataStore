@@ -1,4 +1,4 @@
-package com.likeminds.custdatastore.clients;
+package com.likeminds.customdatastore.clients;
 import javax.net.ssl.HttpsURLConnection;
 import java.io.*;
 import java.net.URL;
@@ -6,7 +6,13 @@ import java.util.Base64;
 import java.util.Properties;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.core.Logger;
+import org.slf4j.LoggerFactory;
+
+import com.likeminds.customdatastore.ldap.DefaultLdapDAO;
 public class OAuth3Client {
+	private final static Logger logger = (Logger) LoggerFactory.getLogger(DefaultLdapDAO.class);
 	static Properties config = OAuthUtils.getClientConfigProps(OAuthConstants.CONFIG_FILE_PATH);
 	private static final Pattern pat = Pattern.compile(".*\"access_token\"\\s*:\\s*\"([^\"]+)\".*");
 	private static final String clientId = (String) config.get(OAuthConstants.CLIENT_ID);//clientId
@@ -44,7 +50,7 @@ public class OAuth3Client {
 	            returnValue = matcher.group(1);
 	        }
 	    } catch (Exception e) {
-	        System.out.println("Error : " + e.getMessage());
+	        logger.debug("Error : " + e.getMessage());
 	    } finally {
 	        if (reader != null) {
 	            try {
@@ -59,10 +65,12 @@ public class OAuth3Client {
 	   
 	}
 	
-	  public static void main(String[] args) { 
-		  OAuth3Client test = new OAuth3Client(); 
-	  
-	  test.getResourceCredentials((String) config.get(OAuthConstants.USERNAME), (String) config.get(OAuthConstants.PASSWORD));
-	  }
+	/*
+	 * public static void main(String[] args) { OAuth3Client test = new
+	 * OAuth3Client();
+	 * 
+	 * test.getResourceCredentials((String) config.get(OAuthConstants.USERNAME),
+	 * (String) config.get(OAuthConstants.PASSWORD)); }
+	 */
 	 
 }

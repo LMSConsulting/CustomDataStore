@@ -1,4 +1,4 @@
-package com.likeminds.custdatastore.ldap;
+package com.likeminds.customdatastore.ldap;
 
 import java.util.ArrayList;
 import java.util.HashMap;

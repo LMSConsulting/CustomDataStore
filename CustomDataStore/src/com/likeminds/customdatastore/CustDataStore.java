@@ -1,4 +1,4 @@
-package com.likeminds.custdatastore;
+package com.likeminds.customdatastore;
 
 import java.io.BufferedReader;
 import java.io.InputStream;
@@ -16,6 +16,7 @@ import org.apache.commons.logging.LogFactory;
 import org.json.JSONObject;
 //import org.json.simple.JSONObject;
 import org.json.simple.parser.JSONParser;
+import org.slf4j.LoggerFactory;
 import org.sourceid.saml20.adapter.conf.Configuration;
 import org.sourceid.saml20.adapter.conf.SimpleFieldList;
 import org.sourceid.saml20.adapter.gui.AbstractSelectionFieldDescriptor.OptionValue;
@@ -27,14 +28,17 @@ import org.sourceid.saml20.adapter.gui.SelectFieldDescriptor;
 import org.sourceid.saml20.adapter.gui.TextFieldDescriptor;
 import org.sourceid.saml20.domain.LdapDataSource;
 import org.sourceid.saml20.domain.mgmt.MgmtFactory;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.core.Logger;
 
-import com.likeminds.custdatastore.clients.Base64Encoded;
-import com.likeminds.custdatastore.clients.OAuth2Client;
-import com.likeminds.custdatastore.clients.OAuth3Client;
-import com.likeminds.custdatastore.clients.OAuthConstants;
-import com.likeminds.custdatastore.clients.OAuthUtils;
-import com.likeminds.custdatastore.ldap.DefaultDirContextFactory;
-import com.likeminds.custdatastore.ldap.DefaultLdapDAO;
+
+import com.likeminds.customdatastore.clients.Base64Encoded;
+import com.likeminds.customdatastore.clients.OAuth2Client;
+import com.likeminds.customdatastore.clients.OAuth3Client;
+import com.likeminds.customdatastore.clients.OAuthConstants;
+import com.likeminds.customdatastore.clients.OAuthUtils;
+import com.likeminds.customdatastore.ldap.DefaultDirContextFactory;
+import com.likeminds.customdatastore.ldap.DefaultLdapDAO;
 //import com.pingidentity.admin.api.model.plugin.SelectFieldDescriptor;
 import com.pingidentity.sdk.GuiConfigDescriptor;
 import com.pingidentity.sources.CustomDataSourceDriver;
@@ -45,6 +49,8 @@ import com.pingidentity.sources.gui.FilterFieldsGuiDescriptor;
 
 public class CustDataStore implements CustomDataSourceDriver
 {
+	private final static Logger logger = (Logger) LoggerFactory.getLogger(DefaultLdapDAO.class);
+
 	private static final String DATA_SOURCE_NAME = "Custom Data Store";
 	private static final String DATA_SOURCE_CONFIG_DESC = "Configuration settings for the JSON data store";
 
@@ -115,7 +121,7 @@ public class CustDataStore implements CustomDataSourceDriver
 	private static final String DEFAULT_LDAP_ATTRIBUTE_VALUE = "true";
 	private static final String DEFAULT_LDAP_ATTRIBUTE_NAME = "privacypolicyflag";
     
-    private Log log = LogFactory.getLog(this.getClass());
+  //  private Log log = LogFactory.getLog(this.getClass());
     private final CustomDataSourceDriverDescriptor descriptor;
 
     private String JsonURL;
@@ -236,7 +242,7 @@ public class CustDataStore implements CustomDataSourceDriver
 	     {
 	     client_credentials_Accesstoken = OAuth2Client.OauthClient();
 	     }
-	     else if(grant_type == "rpoc")
+	     else if(grant_type == "ropc")
 	     {
 	     ropc_Accessstoken = OAuth3Client.getResourceCredentials((String) config.get(OAuthConstants.USERNAME), (String) config.get(OAuthConstants.PASSWORD));
 	     }
@@ -255,7 +261,7 @@ public class CustDataStore implements CustomDataSourceDriver
 	     con.setRequestProperty("Authorization", "Bearer " + client_credentials_Accesstoken);
 	     }
 	     //ROPC
-	     else if(grant_type == "rpoc")
+	     else if(grant_type == "ropc")
 	     {
 	     con.setRequestProperty("Authorization", "Bearer " + ropc_Accessstoken);
 	     }
@@ -264,7 +270,7 @@ public class CustDataStore implements CustomDataSourceDriver
 	     //add request header
 	     con.setRequestProperty("User-Agent", "Mozilla/5.0");
 	     int responseCode = con.getResponseCode();
-	     System.out.println("Response Code : " + responseCode);
+	     logger.debug("Response Code : " + responseCode);
 	     BufferedReader in = new BufferedReader(
 	     new InputStreamReader((InputStream) con.getContent()));
 	     String inputLine;
@@ -274,12 +280,12 @@ public class CustDataStore implements CustomDataSourceDriver
 	     }
 	     in.close();
 	     //print in String
-	     System.out.println(response.toString());
+	     logger.debug(response.toString());
 	     //Read JSON response and print
 	     JSONObject Response = new JSONObject(response.toString());
-	     System.out.println("::::::::::::"+  Response);
+	     logger.debug("::::::::::::"+  Response);
 	     respEmail = Response.getString("userName");
-	     System.out.println("Response Attribute "+Response.getString("userName"));
+	     logger.debug("Response Attribute "+Response.getString("userName"));
 	     return respEmail;
 	     
 	   }

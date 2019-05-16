@@ -1,4 +1,4 @@
-package com.likeminds.custdatastore.clients;
+package com.likeminds.customdatastore.clients;
 
 public class OAuthConstants {
 	
